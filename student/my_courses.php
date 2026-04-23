@@ -6,7 +6,7 @@ if ($_SESSION['role'] != 'student') { header("Location: /acadportal/auth/login.p
 
 $sid = $_SESSION['user_id'];
 
-// If a specific course is selected, show its quizzes
+// ── Course-specific view: show quizzes for a single course ────────────────
 if (isset($_GET['course_id'])) {
     $course_id = intval($_GET['course_id']);
 
@@ -26,15 +26,13 @@ if (isset($_GET['course_id'])) {
            (SELECT MAX(score) FROM quiz_attempts
             WHERE quiz_id=q.id AND student_id=$sid) AS best_score
          FROM quizzes q WHERE q.course_id=$course_id");
-
-    include '../includes/header.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= $course['title'] ?> — Smart Academic Portal</title>
+  <title><?= htmlspecialchars($course['title']) ?> — Smart Academic Portal</title>
   <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -47,8 +45,8 @@ if (isset($_GET['course_id'])) {
     </a>
   </div>
 
-  <h2><?= $course['title'] ?>
-    <span style="font-size:15px;color:#718096;font-weight:400">(<?= $course['code'] ?>)</span>
+  <h2><?= htmlspecialchars($course['title']) ?>
+    <span style="font-size:15px;color:#718096;font-weight:400">(<?= htmlspecialchars($course['code']) ?>)</span>
   </h2>
 
   <div class="card">
@@ -59,8 +57,12 @@ if (isset($_GET['course_id'])) {
     <table class="data-table">
       <thead>
         <tr>
-          <th>Quiz Title</th><th>Time Limit</th><th>Total Marks</th>
-          <th>Your Attempts</th><th>Best Score</th><th>Action</th>
+          <th>Quiz Title</th>
+          <th>Time Limit</th>
+          <th>Total Marks</th>
+          <th>Your Attempts</th>
+          <th>Best Score</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -69,10 +71,10 @@ if (isset($_GET['course_id'])) {
                  ? round(($q['best_score'] / $q['total_marks']) * 100) : null;
       ?>
         <tr>
-          <td><?= $q['title'] ?></td>
-          <td><?= $q['time_limit'] ?> mins</td>
-          <td><?= $q['total_marks'] ?></td>
-          <td><?= $q['attempts'] ?></td>
+          <td><?= htmlspecialchars($q['title']) ?></td>
+          <td><?= intval($q['time_limit']) ?> mins</td>
+          <td><?= intval($q['total_marks']) ?></td>
+          <td><?= intval($q['attempts']) ?></td>
           <td>
             <?php if($pct !== null): ?>
               <?= $q['best_score'] ?>/<?= $q['total_marks'] ?>
@@ -82,7 +84,7 @@ if (isset($_GET['course_id'])) {
             <?php endif; ?>
           </td>
           <td>
-            <a href="/acadportal/student/take_quiz.php?id=<?= $q['id'] ?>"
+            <a href="/acadportal/student/take_quiz.php?id=<?= intval($q['id']) ?>"
                class="btn-primary"
                onclick="return confirm('Start quiz? Timer begins immediately!')">
               Start Quiz
@@ -97,13 +99,11 @@ if (isset($_GET['course_id'])) {
 </div>
 </body>
 </html>
-
 <?php
-// Stop here — don't show the courses list
-exit;
+    exit;
 }
 
-// ── No course_id — show ALL enrolled courses ──────────────────────────────
+// ── Default view: all enrolled courses ───────────────────────────────────
 $courses = mysqli_query($conn,
     "SELECT c.id, c.title, c.code, u.name AS teacher_name,
             COUNT(DISTINCT q.id)  AS quiz_count,
@@ -141,26 +141,25 @@ $courses = mysqli_query($conn,
     <?php while($c = mysqli_fetch_assoc($courses)): ?>
     <div class="card" style="margin-bottom:0">
 
-      <!-- Course color bar -->
       <div style="height:6px;background:#2b6cb0;border-radius:4px;margin-bottom:16px"></div>
 
-      <h3 style="margin-bottom:4px"><?= $c['title'] ?></h3>
+      <h3 style="margin-bottom:4px"><?= htmlspecialchars($c['title']) ?></h3>
       <p style="font-size:13px;color:#718096;margin-bottom:14px">
-        <?= $c['code'] ?> &nbsp;|&nbsp; Teacher: <?= $c['teacher_name'] ?? 'N/A' ?>
+        <?= htmlspecialchars($c['code']) ?> &nbsp;|&nbsp; Teacher: <?= htmlspecialchars($c['teacher_name'] ?? 'N/A') ?>
       </p>
 
       <div style="display:flex;gap:16px;margin-bottom:16px">
         <div style="text-align:center">
-          <div style="font-size:22px;font-weight:700;color:#2b6cb0"><?= $c['quiz_count'] ?></div>
+          <div style="font-size:22px;font-weight:700;color:#2b6cb0"><?= intval($c['quiz_count']) ?></div>
           <div style="font-size:12px;color:#718096">Quizzes</div>
         </div>
         <div style="text-align:center">
-          <div style="font-size:22px;font-weight:700;color:#2b6cb0"><?= $c['attempts_count'] ?></div>
+          <div style="font-size:22px;font-weight:700;color:#2b6cb0"><?= intval($c['attempts_count']) ?></div>
           <div style="font-size:12px;color:#718096">Attempts</div>
         </div>
       </div>
 
-      <a href="/acadportal/student/my_courses.php?course_id=<?= $c['id'] ?>"
+      <a href="/acadportal/student/my_courses.php?course_id=<?= intval($c['id']) ?>"
          class="btn-primary"
          style="display:block;text-align:center">
         View Quizzes &rarr;
